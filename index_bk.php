@@ -74,32 +74,7 @@ Attendees
     <div class="col-md-12">
                 <div class="panel">
             <div class="table-responsive">
-
-			<table id="attendeeTable" class="table table-bordered table-striped dt-responsive nowrap" width="100%" cellspacing="0">
-					<thead>
-						<tr>
-							<!--<th>Category ID</th>-->
-							<th>
-                               First Name
-                            </th>
-							<th>
-                               Last Name
-                            </th>
-                            <th>
-                              Email
-                            </th>
-                            <th>
-                               Ticket
-                            </th>
-                            <th>
-                              Order Ref.
-                            </th>
-                            <th></th>
-						</tr>
-					</thead>
-
-				</table>
-               <!-- <table class="table">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>
@@ -160,7 +135,7 @@ Attendees
 
                    </tbody>
 
-                </table>-->
+                </table>
             </div>
         </div>
             </div>

@@ -200,6 +200,27 @@ class common_model extends CI_Model{
 		return $data;
 	}
 
+	public function getattendeesDetails($att_id){
+
+      	$data=array();
+		$fromtable="attendees ad";
+		$orderby='ad.ATD_CREATED';
+		$orderType='DESC';
+        $this->db->where('u.U_ROLE=','C');
+        $this->db->select('*');
+		$this->db->from($fromtable);
+		$this->db->join('order_details od', 'ad.ATD_ORD_ID=od.ORD_ID','left');
+		$this->db->join('orders ord', 'ord.ORD_ID=ad.ATD_ORD_ID','left');
+		$this->db->join('users u', 'u.U_ID=ad.ATD_U_ID','left');
+		$this->db->where('ad.ATD_ID=',$att_id);
+		$this->db->order_by($orderby,$orderType);
+		$this->db->where('od.ORD_CAT_TYPE!=','A');
+		$query = $this->db->get();
+		//echo $this->db->last_query();exit;
+		$data = $query->result_array();
+		return $data;
+	}
+
 	public function getAttendeedetails($att_id){
 
 		$data=array();
@@ -252,6 +273,20 @@ class common_model extends CI_Model{
 		$this->db->join('orders ord', 'ord.ORD_ID=ad.ATD_ORD_ID','left');
 		 $this->db->order_by($orderby,$orderType);
 		$this->db->where('od.ORD_CAT_TYPE!=','A');
+		$query = $this->db->get();
+		//echo $this->db->last_query();exit;
+
+		$data = $query->result_array();
+		return $data;
+	}
+
+	public function getorderid($orderref){
+
+      	$data=array();
+		$fromtable="orders";
+		$this->db->where('ORD_REFERENCE=',$orderref);
+        $this->db->select('*');
+		$this->db->from($fromtable);
 		$query = $this->db->get();
 		//echo $this->db->last_query();exit;
 

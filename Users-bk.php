@@ -36,59 +36,43 @@ class Users extends CI_Controller
 		 $this->load->view('admin/content', $data);
     }
     
-    public function ajax_list($limit=0)
-	{
-		$post = $this->input->post();
-		$i = 0;
-		$admin_path=admin_path();
-		//echo $admin_path;
-
-				
-		$columns = array(
-			array( 'db' => 'ad.ATD_FNAME',  'dt' => $i++ ),
-			array( 'db' => 'ad.ATD_LNAME',  'dt' => $i++ ),
-			array( 'db' => 'ad.ATD_EMAIL',  'dt' => $i++ ),
-			array( 'db' => 'od.ORD_T_NAME',  'dt' => $i++ ),
-			array( 'db' => 'ord.ORD_REFERENCE',  'dt' => $i++,'formatter'=> function( $d, $row ) {
-						$op = array();
-						$op[]='<a href="javascript:void(0);" data-href="http://localhost/conference/admin/users/orderView/'.$d.'" title="View Order '.$d.'" class="loadModal">'.$d.'</a>';
-						return $op;
-					}),
-			array( 'db' => 'ad.ATD_ID',
-					'dt' => $i++,
-					'formatter' => function( $d, $row ) {
-						$op = array();
-						$op[]='<div class="btn-group">
-                                    <button type="button" class="btn btn-xs btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Action <span class="caret"></span></button>
-                                    <ul class="dropdown-menu">
-										<li><a href="javascript:void(0);"  data-modal-id="MessageAttendee" data-href="http://localhost/conference/admin/users/messageAttendee/'.$d.'" class="loadModal"> Message</a></li>
-										<li><a href="javascript:void(0);"  data-modal-id="View Accompany" data-href="http://localhost/conference/admin/users/viewAccompany/'.$d.'" class="loadModal"> View Accompany details</a></li>
-										<li><a href="javascript:void(0);"  data-href="users/resendTicket/'.$d.'" class="loadModal"> Resend Ticket</a></li>
-                                        <li><a href="http://localhost/conference/admin/users/downloadPdf/'.$d.'">Download PDF Ticket</a></li>
-                                    </ul>
-                                </div>';
-							$op[] = '<a href="javascript:void(0);"  data-href="http://localhost/conference/admin/users/editAttendee/'.$d.'" class="loadModal btn btn-xs btn-primary"> Edit</a>';
-							$op[] = '<a href="javascript:void(0);"  data-href="http://localhost/conference/admin/users/cancelAttendee/'.$d.'"  class="loadModal btn btn-xs btn-danger"> Cancel</a>';
-						return $op;
-					})
-			);
-		
-
-		$join = array(array('order_details od', 'ad.ATD_ORD_ID=od.ORD_ID','left'),array('orders ord', 'ord.ORD_ID=ad.ATD_ORD_ID','left'),array('users u', 'u.U_ID=ad.ATD_U_ID','left'));
-		$where = array();
-		if($this->user_session['U_ROLE']=='S'){
-			
-			$where["u.U_ADDEDBY_ID"] = $this->user_session['U_ID'];
-		
-		}
-		$where["u.U_ROLE"] = "C";
-		$where["ad.ATD_IS_CANCELED"] = "0";
-		$where["od.ORD_CAT_TYPE"] = "PG";
-		$where["od.ORD_CAT_TYPE"] = "D";
-		
-		
-		echo json_encode( SSP::simple( $post, "attendees ad", "ad.ATD_ID", $columns,$join,$where ) );exit;
-	}
+    public function ajax_list($limit = 0)
+    {
+        $post = $this->input->post();
+        $i    = 0;
+        $columns = array(
+            array(
+                'db' => 'c.cat_name',
+                'dt' => $i++
+            ),
+            array(
+                'db' => 'c.cat_title',
+                'dt' => $i++
+            ),
+            array(
+                'db' => 'c.cat_theme',
+                'dt' => $i++
+            ),
+            array(
+                'db' => 'c.cat_id',
+                'dt' => $i++,
+                'formatter' => function($d, $row)
+                {
+                    $op = array();
+                    if (hasAccess("category", "details"))
+                        $op[] = '<a href="category/edit/' . $d . '" onclick="editCategory(' . $d . ');">Edit</a>';
+                    $op[] = '<a href="javascript:void(0);" onclick="deleteCategory(' . $d . ');">Delete</a>';
+                    return implode(" | ", $op);
+                }
+            )
+        );
+        //echo "<pre>";print_r($columns);exit;
+        $join    = array();
+        $where   = array();
+        //	$where["u.role"] = "B";
+        echo json_encode(SSP::simple($post, "faq_category c", "c.cat_id", $columns, $join, $where));
+        exit;
+    }
     
     
     public function edit()
@@ -180,14 +164,15 @@ class Users extends CI_Controller
         $html .= $this->load->view('admin/users/addattendee', $data, TRUE);
         echo $html;
     }
-    public function editAttendee($att_id)
+    public function editAttendee($order_id, $user_id)
     {
-		$ticketDetails               = TicketStructure();
+		 $ticketDetails               = TicketStructure();
         $data['ticketDetails']       = $ticketDetails;
-        $userAttendeeDetails         = $this->common_model->getattendeesDetails($att_id);
+        $userAttendeeDetails         = $this->common_model->getuserattendeeDetails($order_id, $user_id);
         $userAttendeeDetails         = $userAttendeeDetails[0];
-        $data['order_id']            = $userAttendeeDetails['ATD_ORD_ID'];
-        $data['user_id']             = $userAttendeeDetails['ATD_U_ID'];
+        $data['order_id']            = $order_id;
+        $data['user_id']             = $user_id;
+        // print_r($userAttendeeDetails);
         $data['userAttendeeDetails'] = $userAttendeeDetails;
         $html                        = '';
         $html .= $this->load->view('admin/users/editAttendee', $data, TRUE);
@@ -247,13 +232,9 @@ class Users extends CI_Controller
         echo $html;
     }
     
-    public function orderView($orderref)
+    public function orderView($order_id)
     {
-		
-		$order_id=$this->common_model->getorderid($orderref);
-		//print_r($order_id);
-		$order_id=$order_id[0];
-		$orderDetails         = $this->common_model->getorderDetails($order_id['ORD_ID']);
+		$orderDetails         = $this->common_model->getorderDetails($order_id);
 		$orderDetails=$orderDetails[0];
 		$data['orderDetails'] = $orderDetails;
         $html = '';
